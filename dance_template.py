@@ -36,6 +36,34 @@ def run_motors_timed(mav_connection, seconds: int, motor_settings: list) -> None
         time.sleep(0.2)
         step += 0.2
 
+
+def forward(percent):
+	return [0, 0, 1 * percent, 1 * percent, 0, 0]
+
+def backward(percent):
+	return [0, 0, 1 * percent, 1 * percent, 0, 0]
+
+def up(percent):
+	return [0, 0, 0, 0, 1 * percent, 1 * percent ]
+
+def down(percent):
+	return [0, 0, 0, 0, -1 * percent, -1 * percent ]
+
+def right(percent):
+	return [0, 0, 1 * percent, 1 * percent, 0, 0]
+
+def left(percent):
+	return [0, 0, -1 * percent, -1 * percent, 0, 0]
+
+def donut(percent):
+	return [1 * percent, 0, 0.5 * percent, 0.5 * percent, 0, 0]
+
+def circle(percent):
+	return [1 * percent, 0.5 * percent, 1 * percent, 0.5 * percent, 0, 0]
+
+def stop():
+	return [0, 0, 0, 0, 0, 0]
+
 if __name__ == "__main__":
     ####
     # Initialize ROV
