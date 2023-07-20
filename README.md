@@ -3,7 +3,7 @@
 [For those who are curious, you can find the ardupilot SITL documentation here](https://ardupilot.org/dev/docs/sitl-simulator-software-in-the-loop.html)
 
 
-This guide provides the steps to setup the ArduPilot's Software in the Loop (SITL) environment **on your raspberry pi**.
+This guide provides the steps to setup the ArduPilot's Software in the Loop (SITL) environment **on your raspberry pi**..
 
 ## Prerequisites
 
