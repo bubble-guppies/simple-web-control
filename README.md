@@ -125,7 +125,9 @@ workon simple-web-control
 python sliders.py
 ```
 
-:information_source: Keep an eye on the terminal for the output of the script. Wait for the script to verify that the ROV has been armed
+:information_source: **This will only work after you started the SITL simulator, or connected the real ROV**
+Keep an eye on the terminal for the output of the script. Wait for the script to verify that the ROV has been armed
+
 
 ## On your laptop
 
