@@ -1,24 +1,26 @@
-# open a socket
-# listen on that socket, analog to NC
-# if you get 100, send forward 100
-
+"""
+Bubble Guppies Python Server
+Creates a server to listen for commands to send to the AUV.
+"""
 # https://pythonprogramming.net/python-binding-listening-sockets/
 import dance_template
 import socket
 import sys
 from motor_test import test_motor
-import time
 from pymavlink import mavutil
 import numpy as np
 
 
-def create_server():
-    """ """
-    HOST = ""
-    PORT = 8678
+def create_server(HOST="", PORT=5000) -> socket:
+    """Creates a server on HOST and PORT. Returns the socket.
+
+    Returns:
+        socket: the connected socket
+    """
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setblocking(0)
 
+    print(f"Trying to bind to {PORT}...")
     try:
         s.bind((HOST, PORT))
 
@@ -28,42 +30,55 @@ def create_server():
 
     print("Socket bind complete")
 
-    s.listen(1)
-    s.settimeout(10)
+    s.listen(1)  # listens for one client
+    s.settimeout(60)  # times out if no client connects within 60 seconds
 
     conn, addr = s.accept()
 
     print("Connected with " + addr[0] + ":" + str(addr[1]))
     return conn
 
-def parse_message(mav_connection, reply: str):
-    values_dict = {
+
+def parse_message(mav_connection, message: str):
+    """Parses message string into a command that the AUV runs.
+
+    Args:
+        mav_connection: mav_connection
+        message (str): the message string
+    """
+    command_map = {
         "forward": np.array([-1, -1, 1, 1, 0, 0]),
         "backward": np.array([1, 1, -1, -1, 0, 0]),
         "left": np.array([-1, 1, -1, 1, 0, 0]),
         "right": np.array([1, -1, 1, -1, 0, 0]),
         "clockwise": np.array([1, 0, 0, 0, 0, 0]),
         "counterclockwise": np.array([0, 1, 0, 0, 0, 0]),
-        "stop": np.array([0, 0, 0, 0, 0, 0])
+        "stop": np.array([0, 0, 0, 0, 0, 0]),
     }
+    # try to split msg string into command
     try:
-        reply = reply.strip()
-        reply = reply.split()
-        command = reply[0]
+        message = message.strip().lower()
+        message = message.split(",")
+        command = message[0]
         # user only specifies command
-        if len(reply)==1:
+        if len(message) == 1:
             time = 5
-        elif len(reply)==2:
-            time = int(reply[1])
-            power = 1
-        elif len(reply) == 3:
-            power = int(reply[1])
-            time = int(reply[2])
+            power = 100
+        # user specifies command and time
+        elif len(message) == 2:
+            time = int(message[1])
+            power = 100
+        # user specifies command, time, and power
+        elif len(message) == 3:
+            power = int(message[1])
+            time = int(message[2])
         else:
             # if user inputs more values than intended
             pass
-        thrusters = values_dict[command.strip()] * power
+
+        thrusters = command_map[command] * power
         print(f"{command = }, {power = }, {time = }")
+
     except Exception as e:
         # Default values if the command couldn't be found
         print("Command not found! Error: ", e)
@@ -74,9 +89,6 @@ def parse_message(mav_connection, reply: str):
     dance_template.arm_rov(mav_connection)
     dance_template.run_motors_timed(mav_connection, time, thrusters)
 
-def pause(mav_connection):
-    dance_template.stop(mav_connection, 0.1)
-
 
 def main():
     ####
@@ -86,12 +98,17 @@ def main():
     mav_connection.wait_heartbeat()
 
     # Create server
-    conn = create_server()
+    HOST = ""
+    PORT = 5000
+    conn = create_server(HOST, PORT)
 
     with conn:
         conn.send(
             str.encode(
-                "Type in a number between -100 and 100 to represent thruster force. \n"
+                "Enter a ROV command, in one of these forms:\n\
+'<command>,<power>,<time>'\n\
+'<command>,<time>'\n\
+'<command>'\n"
             )
         )
         while True:
@@ -102,16 +119,12 @@ def main():
             # parse_message(mav_connection, decoded)
             parse_message(mav_connection, decoded)
 
+    print(
+        "Exited while loop, likely due to client disconnecting. Closing the socket and disarming ROV."
+    )
     conn.close()
-
     dance_template.disarm_rov(mav_connection)
-
-    print("exited while loop")
 
 
 if __name__ == "__main__":
     main()
-"""
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    ???
-"""
