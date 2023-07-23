@@ -48,11 +48,22 @@ def parse_message(mav_connection, reply: str):
     }
     try:
         reply = reply.strip()
-        (command, power, time) = reply.split(",")
-        print(f"{command = }, {power = }, {time = }")
-        power = int(power)
-        time = int(time)
+        reply = reply.split()
+        command = reply[0]
+        # user only specifies command
+        if len(reply)==1:
+            time = 5
+        elif len(reply)==2:
+            time = int(reply[1])
+            power = 1
+        elif len(reply) == 3:
+            power = int(reply[1])
+            time = int(reply[2])
+        else:
+            # if user inputs more values than intended
+            pass
         thrusters = values_dict[command.strip()] * power
+        print(f"{command = }, {power = }, {time = }")
     except Exception as e:
         # Default values if the command couldn't be found
         print("Command not found! Error: ", e)
