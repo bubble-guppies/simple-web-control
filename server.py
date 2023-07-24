@@ -22,7 +22,6 @@ def create_server(HOST: str = "", PORT: int = 5000):
         conn: the opened socket
     """
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.setblocking(0)
 
     print(f"Trying to bind to {PORT}...")
     try:
@@ -52,7 +51,7 @@ def parse_message(message: str) -> tuple[str, list, int]:
     Returns:
         Tuple[str, list, int]: the reply to the user, the thrusters list, and the amount of time to execute the command for
     """
-    stop_time = 0.1  # the duration to stop for if message can't be interpreted
+    stop_time = 1  # the duration to stop for if message can't be interpreted
     default_power = 100  # default value for power
     power = default_power
     default_time = 5  # default duration
@@ -90,8 +89,8 @@ def parse_message(message: str) -> tuple[str, list, int]:
                 power = default_power
             # user specifies command, power, and time
             elif len(message) == 3:
-                power = int(message[1])
-                time = int(message[2])
+                time = int(message[1])
+                power = int(message[2])
             else:
                 # if user inputs more values than intended
                 pass
@@ -135,9 +134,7 @@ def execute_command(mav_connection, thrusters: list, time: int):
         )
         time = 0
 
-    dance_template.arm_rov(mav_connection)
     dance_template.run_motors_timed(mav_connection, time, thrusters)
-
 
 def main():
     ####
@@ -145,8 +142,10 @@ def main():
     ####
     mav_connection = dance_template.mavutil.mavlink_connection("udpin:0.0.0.0:14550")
     mav_connection.wait_heartbeat()
+    dance_template.arm_rov(mav_connection)
 
-    # Create server
+
+    # Create server 
     HOST = ""
     PORT = 5000
     conn = create_server(HOST, PORT)
@@ -155,19 +154,22 @@ def main():
         conn.send(
             str.encode(
                 "Enter a ROV command, in one of these forms:\n\
-'<command>,<power>,<time>'\n\
+'<command>,<time>,<power>'\n\
 '<command>,<time>'\n\
 '<command>'\n"
             )
         )
         while True:
-            data = conn.recv(2048)
-            if not data:
-                break
-            decoded = data.decode("utf-8")
-            (reply, thrusters, time) = parse_message(decoded)
-            conn.send(reply.encode())
-            execute_command(mav_connection, thrusters, time)
+            try:
+                data = conn.recv(2048, socket.MSG_DONTWAIT)
+                if not data:
+                    break
+                decoded = data.decode("utf-8")
+                (reply, thrusters, time) = parse_message(decoded)
+                conn.send(reply.encode())
+                execute_command(mav_connection, thrusters, time)
+            except BlockingIOError:
+                execute_command(mav_connection, [0, 0, 0, 0, 0, 0], 1)
 
     print(
         "Exited while loop, likely due to client disconnecting. Closing the socket and disarming ROV."
