@@ -62,6 +62,9 @@ def parse_message(mav_connection, reply: str):
         else:
             # if user inputs more values than intended
             pass
+
+        if(command == "stop"):
+            pause(mav_connection)
         thrusters = values_dict[command.strip()] * power
         print(f"{command = }, {power = }, {time = }")
     except Exception as e:
