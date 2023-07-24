@@ -103,6 +103,11 @@ def parse_message(message: str) -> tuple[str, list, int]:
         command = "stop"
         time = stop_time
 
+    if power > 100:
+        power = 100
+    elif power < -100:
+        power = -100
+
     thrusters = command_map[command] * power
     thrusters = thrusters.tolist()
 
