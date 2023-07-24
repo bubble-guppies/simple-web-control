@@ -1,3 +1,7 @@
+"""
+Bubble Guppies Python Server
+Creates a server to listen for commands to send to the AUV.
+"""
 # https://pythonprogramming.net/python-binding-listening-sockets/
 import dance_template
 import socket
@@ -91,8 +95,9 @@ def parse_message(message: str) -> tuple[str, list, int]:
                 # if user inputs more values than intended
                 pass
             reply = f"Recieved message. Executing '{command}' at {power}% power for {time} seconds.\n"
+
     except Exception as e:
-        # Default values if the command couldn't be found
+        # Default values if there is an error interpreting the command.
         reply = f"Error interpreting command: {e}.\n"
         command = "stop"
         time = stop_time
@@ -127,6 +132,7 @@ def execute_command(mav_connection, thrusters: list, time: int):
     dance_template.arm_rov(mav_connection)
     dance_template.run_motors_timed(mav_connection, time, thrusters)
 
+
 def main():
     ####
     # Initialize ROV
@@ -154,16 +160,12 @@ def main():
             conn.send(reply.encode())
             execute_command(mav_connection, thrusters, time)
 
+    print(
+        "Exited while loop, likely due to client disconnecting. Closing the socket and disarming ROV."
+    )
     conn.close()
-
     dance_template.disarm_rov(mav_connection)
-
-    print("exited while loop")
 
 
 if __name__ == "__main__":
     main()
-"""
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    ???
-"""
